@@ -1,23 +1,18 @@
 from collections import namedtuple
-from pytest import raises
-from graphql.core import graphql
-from graphql.core.type import (
+from graphql import graphql
+from graphql.type import (
     GraphQLSchema,
     GraphQLObjectType,
     GraphQLField,
-    GraphQLArgument,
     GraphQLList,
-    GraphQLNonNull,
     GraphQLInt,
     GraphQLString,
-    GraphQLBoolean,
-    GraphQLID,
 )
 
 from graphql_relay.node.node import (
-    fromGlobalId,
-    globalIdField,
-    nodeDefinitions,
+    from_global_id,
+    global_id_field,
+    node_definitions,
 )
 
 User = namedtuple('User', ['id', 'name'])
@@ -33,53 +28,59 @@ photoData = {
     '2': Photo(photoId=2, width=400),
 }
 
-def getNode(globalId, *args):
-    resolvedGlobalId = fromGlobalId(globalId)
-    _type, _id = resolvedGlobalId.type, resolvedGlobalId.id
+
+def get_node(global_id, _info):
+    _type, _id = from_global_id(global_id)
     if _type == 'User':
         return userData[_id]
     else:
         return photoData[_id]
 
-def getNodeType(obj):
+
+def get_node_type(obj, _info):
     if isinstance(obj, User):
         return userType
     else:
         return photoType
 
-_nodeDefinitions = nodeDefinitions(getNode, getNodeType)
-nodeField, nodeInterface = _nodeDefinitions.nodeField, _nodeDefinitions.nodeInterface
+
+node_interface, node_field = node_definitions(get_node, get_node_type)
 
 userType = GraphQLObjectType(
     'User',
-    fields= lambda: {
-        'id': globalIdField('User'),
+    fields=lambda: {
+        'id': global_id_field('User'),
         'name': GraphQLField(GraphQLString),
     },
-    interfaces= [nodeInterface]
+    interfaces=[node_interface]
 )
 
 photoType = GraphQLObjectType(
     'Photo',
-    fields= lambda: {
-        'id': globalIdField('Photo', lambda obj: obj.photoId),
+    fields=lambda: {
+        'id': global_id_field('Photo', lambda obj, *_: obj.photoId),
         'width': GraphQLField(GraphQLInt),
     },
-    interfaces= [nodeInterface]
+    interfaces=[node_interface]
 )
 
 queryType = GraphQLObjectType(
     'Query',
-    fields= lambda: {
-        'node': nodeField,
+    fields=lambda: {
+        'node': node_field,
         'allObjects': GraphQLField(
-            GraphQLList(nodeInterface),
-            resolver= lambda *_: [userData['1'], userData['2'], photoData['1'], photoData['2']]
+            GraphQLList(node_interface),
+            resolver=lambda _root, _info:
+                [userData['1'], userData['2'], photoData['1'], photoData['2']]
         )
     }
 )
 
-schema = GraphQLSchema(query=queryType)
+schema = GraphQLSchema(
+    query=queryType,
+    types=[userType, photoType]
+)
+
 
 def test_gives_different_ids():
     query = '''
@@ -90,24 +91,25 @@ def test_gives_different_ids():
     }
     '''
     expected = {
-      'allObjects': [
-        {
-          'id': 'VXNlcjox'
-        },
-        {
-          'id': 'VXNlcjoy'
-        },
-        {
-          'id': 'UGhvdG86MQ=='
-        },
-        {
-          'id': 'UGhvdG86Mg=='
-        },
-      ]
+        'allObjects': [
+            {
+                'id': 'VXNlcjox'
+            },
+            {
+                'id': 'VXNlcjoy'
+            },
+            {
+                'id': 'UGhvdG86MQ=='
+            },
+            {
+                'id': 'UGhvdG86Mg=='
+            },
+        ]
     }
     result = graphql(schema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected
+
 
 def test_refetches_the_ids():
     query = '''
@@ -127,15 +129,15 @@ def test_refetches_the_ids():
     }
     '''
     expected = {
-      'user': {
-        'id': 'VXNlcjox',
-        'name': 'John Doe'
-      },
-      'photo': {
-        'id': 'UGhvdG86MQ==',
-        'width': 300
-      }
+        'user': {
+            'id': 'VXNlcjox',
+            'name': 'John Doe'
+        },
+        'photo': {
+            'id': 'UGhvdG86MQ==',
+            'width': 300
+        }
     }
     result = graphql(schema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected

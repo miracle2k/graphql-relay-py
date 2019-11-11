@@ -1,9 +1,9 @@
-from pytest import raises
-from graphql.core import graphql
+from graphql import graphql
 
 from .schema import StarWarsSchema
 
-def test_correctely_mutates_dataset():
+
+def test_correctly_mutates_dataset():
     query = '''
       mutation AddBWingQuery($input: IntroduceShipInput!) {
         introduceShip(input: $input) {
@@ -19,24 +19,24 @@ def test_correctely_mutates_dataset():
       }
     '''
     params = {
-      'input': {
-        'shipName': 'B-Wing',
-        'factionId': '1',
-        'clientMutationId': 'abcde',
-      }
+        'input': {
+            'shipName': 'B-Wing',
+            'factionId': '1',
+            'clientMutationId': 'abcde',
+        }
     }
     expected = {
-      'introduceShip': {
-        'ship': {
-          'id': 'U2hpcDo5',
-          'name': 'B-Wing'
-        },
-        'faction': {
-          'name': 'Alliance to Restore the Republic'
-        },
-        'clientMutationId': 'abcde',
-      }
+        'introduceShip': {
+            'ship': {
+                'id': 'U2hpcDo5',
+                'name': 'B-Wing'
+            },
+            'faction': {
+                'name': 'Alliance to Restore the Republic'
+            },
+            'clientMutationId': 'abcde',
+        }
     }
-    result = graphql(StarWarsSchema, query, None, params)
-    assert result.errors == None
+    result = graphql(StarWarsSchema, query, variables=params)
+    assert not result.errors
     assert result.data == expected

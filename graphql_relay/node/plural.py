@@ -1,28 +1,35 @@
-from graphql.core.type import (
+from collections import OrderedDict
+
+from promise import Promise
+
+from graphql.type import (
     GraphQLArgument,
     GraphQLList,
     GraphQLNonNull,
-    GraphQLField,
-    GraphQLInputObjectType
+    GraphQLField
 )
-# GraphQLInputObjectType
 
-def pluralIdentifyingRootField(argName, inputType, outputType, resolveSingleInput, description=None):
-    inputArgs = {}
-    inputArgs[argName] = GraphQLArgument(
+
+def plural_identifying_root_field(
+        arg_name, input_type, output_type, resolve_single_input, description=None):
+    input_args = OrderedDict()
+    input_args[arg_name] = GraphQLArgument(
         GraphQLNonNull(
             GraphQLList(
-                GraphQLNonNull(inputType)
+                GraphQLNonNull(input_type)
             )
         )
     )
-    def resolver(obj, args, *_):
-        inputs = args[argName]
-        return map(resolveSingleInput, inputs)
+
+    def resolver(_obj, info, **args):
+        inputs = args[arg_name]
+        return Promise.all([
+            resolve_single_input(info, input_) for input_ in inputs
+        ])
 
     return GraphQLField(
-        GraphQLList(outputType),
+        GraphQLList(output_type),
         description=description,
-        args=inputArgs,
-        resolver=resolver 
+        args=input_args,
+        resolver=resolver
     )

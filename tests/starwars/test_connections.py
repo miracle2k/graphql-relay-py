@@ -1,7 +1,7 @@
-from pytest import raises
-from graphql.core import graphql
+from graphql import graphql
 
 from .schema import StarWarsSchema
+
 
 def test_correct_fetch_first_ship_rebels():
     query = '''
@@ -19,19 +19,19 @@ def test_correct_fetch_first_ship_rebels():
     }
     '''
     expected = {
-      'rebels': {
-        'name': 'Alliance to Restore the Republic',
-        'ships': {
-          'edges': [
-            {
-              'node': {
-                'name': 'X-Wing'
-              }
+        'rebels': {
+            'name': 'Alliance to Restore the Republic',
+            'ships': {
+                'edges': [
+                    {
+                        'node': {
+                            'name': 'X-Wing'
+                        }
+                    }
+                ]
             }
-          ]
         }
-      }
     }
     result = graphql(StarWarsSchema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected

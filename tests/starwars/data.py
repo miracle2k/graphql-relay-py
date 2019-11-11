@@ -1,12 +1,14 @@
-# This defines a basic set of data for our Star Wars Schema.
-#
-# This data is hard coded for the sake of the demo, but you could imagine
-# fetching this data from a backend service rather than from hardcoded
-# JSON objects in a more complex demo.
+"""This defines a basic set of data for our Star Wars Schema.
+
+This data is hard coded for the sake of the demo, but you could imagine
+fetching this data from a backend service rather than from hardcoded
+JSON objects in a more complex demo.
+"""
+
 from collections import namedtuple
 
-Ship = namedtuple('Ship',['id', 'name'])
-Faction = namedtuple('Faction',['id', 'name', 'ships'])
+Ship = namedtuple('Ship', ['id', 'name'])
+Faction = namedtuple('Faction', ['id', 'name', 'ships'])
 
 xwing = Ship(
     id='1',
@@ -59,7 +61,7 @@ rebels = Faction(
 empire = Faction(
     id='2',
     name='Galactic Empire',
-    ships= ['6', '7', '8']
+    ships=['6', '7', '8']
 )
 
 data = {
@@ -79,8 +81,9 @@ data = {
     }
 }
 
+
 def createShip(shipName, factionId):
-    nextShip = len(data['Ship'].keys())+1
+    nextShip = len(data['Ship']) + 1
     newShip = Ship(
         id=str(nextShip),
         name=shipName
@@ -93,11 +96,14 @@ def createShip(shipName, factionId):
 def getShip(_id):
     return data['Ship'][_id]
 
+
 def getFaction(_id):
     return data['Faction'][_id]
 
+
 def getRebels():
     return rebels
+
 
 def getEmpire():
     return empire

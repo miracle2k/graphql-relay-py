@@ -1,7 +1,7 @@
-from pytest import raises
-from graphql.core import graphql
+from graphql import graphql
 
 from .schema import StarWarsSchema
+
 
 def test_correctly_fetches_id_name_rebels():
     query = '''
@@ -13,14 +13,15 @@ def test_correctly_fetches_id_name_rebels():
       }
     '''
     expected = {
-      'rebels': {
-        'id': 'RmFjdGlvbjox',
-        'name': 'Alliance to Restore the Republic'
-      }
+        'rebels': {
+            'id': 'RmFjdGlvbjox',
+            'name': 'Alliance to Restore the Republic'
+        }
     }
     result = graphql(StarWarsSchema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected
+
 
 def test_correctly_refetches_rebels():
     query = '''
@@ -34,14 +35,15 @@ def test_correctly_refetches_rebels():
       }
     '''
     expected = {
-      'node': {
-        'id': 'RmFjdGlvbjox',
-        'name': 'Alliance to Restore the Republic'
-      }
+        'node': {
+            'id': 'RmFjdGlvbjox',
+            'name': 'Alliance to Restore the Republic'
+        }
     }
     result = graphql(StarWarsSchema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected
+
 
 def test_correctly_fetches_id_name_empire():
     query = '''
@@ -53,14 +55,15 @@ def test_correctly_fetches_id_name_empire():
       }
     '''
     expected = {
-      'empire': {
-        'id': 'RmFjdGlvbjoy',
-        'name': 'Galactic Empire'
-      }
+        'empire': {
+            'id': 'RmFjdGlvbjoy',
+            'name': 'Galactic Empire'
+        }
     }
     result = graphql(StarWarsSchema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected
+
 
 def test_correctly_refetches_empire():
     query = '''
@@ -74,14 +77,15 @@ def test_correctly_refetches_empire():
       }
     '''
     expected = {
-      'node': {
-        'id': 'RmFjdGlvbjoy',
-        'name': 'Galactic Empire'
-      }
+        'node': {
+            'id': 'RmFjdGlvbjoy',
+            'name': 'Galactic Empire'
+        }
     }
     result = graphql(StarWarsSchema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected
+
 
 def test_correctly_refetches_xwing():
     query = '''
@@ -95,11 +99,11 @@ def test_correctly_refetches_xwing():
       }
     '''
     expected = {
-      'node': {
-        'id': 'U2hpcDox',
-        'name': 'X-Wing'
-      }
+        'node': {
+            'id': 'U2hpcDox',
+            'name': 'X-Wing'
+        }
     }
     result = graphql(StarWarsSchema, query)
-    assert result.errors == None
+    assert not result.errors
     assert result.data == expected

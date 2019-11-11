@@ -1,4 +1,6 @@
-from graphql.core.type import (
+from collections import OrderedDict
+
+from graphql.type import (
     GraphQLArgument,
     GraphQLBoolean,
     GraphQLInt,
@@ -8,102 +10,77 @@ from graphql.core.type import (
     GraphQLString,
     GraphQLField
 )
+from ..utils import resolve_maybe_thunk
 
 
-class ConnectionConfig(object):
-    '''
-    Returns a GraphQLFieldConfigArgumentMap appropriate to include
-    on a field whose return type is a connection type.
-    '''
-    def __init__(self, name, nodeType, edgeFields=None, connectionFields=None):
-        self.name = name
-        self.nodeType = nodeType
-        self.edgeFields = edgeFields
-        self.connectionFields = connectionFields
+connection_args = OrderedDict((
+    ('before', GraphQLArgument(GraphQLString)),
+    ('after', GraphQLArgument(GraphQLString)),
+    ('first', GraphQLArgument(GraphQLInt)),
+    ('last', GraphQLArgument(GraphQLInt)),
+))
 
 
-class GraphQLConnection(object):
-    def __init__(self, edgeType, connectionType):
-        self.edgeType = edgeType
-        self.connectionType = connectionType
-
-
-connectionArgs = {
-    'before': GraphQLArgument(GraphQLString),
-    'after': GraphQLArgument(GraphQLString),
-    'first': GraphQLArgument(GraphQLInt),
-    'last': GraphQLArgument(GraphQLInt),
-}
-
-
-def resolveMaybeThunk(f):
-    if hasattr(f, '__call__'):
-        return f()
-    return f
-
-
-def connectionDefinitions(*args, **kwargs):
-    if len(args) == 1 and not kwargs and isinstance(args[0], ConnectionConfig):
-        config = args[0]
-    else:
-        config = ConnectionConfig(*args, **kwargs)
-    name, nodeType = config.name, config.nodeType
-    edgeFields = config.edgeFields or {}
-    connectionFields = config.connectionFields or {}
-    edgeType = GraphQLObjectType(
-        name+'Edge',
+def connection_definitions(
+        name, node_type, resolve_node=None, resolve_cursor=None,
+        edge_fields=None, connection_fields=None):
+    edge_fields = edge_fields or OrderedDict()
+    connection_fields = connection_fields or OrderedDict()
+    edge_type = GraphQLObjectType(
+        name + 'Edge',
         description='An edge in a connection.',
-        fields=lambda: dict({
-            'node': GraphQLField(
-                nodeType,
+        fields=lambda: OrderedDict((
+            ('node', GraphQLField(
+                node_type,
+                resolver=resolve_node,
                 description='The item at the end of the edge',
-            ),
-            'cursor': GraphQLField(
+            )),
+            ('cursor', GraphQLField(
                 GraphQLNonNull(GraphQLString),
+                resolver=resolve_cursor,
                 description='A cursor for use in pagination',
-            )
-        }, **resolveMaybeThunk(edgeFields))
+            )),
+        ), **resolve_maybe_thunk(edge_fields))
     )
 
-    connectionType = GraphQLObjectType(
-        name+'Connection',
+    connection_type = GraphQLObjectType(
+        name + 'Connection',
         description='A connection to a list of items.',
-        fields=lambda: dict({
-            'pageInfo': GraphQLField(
-                GraphQLNonNull(pageInfoType),
+        fields=lambda: OrderedDict((
+            ('pageInfo', GraphQLField(
+                GraphQLNonNull(page_info_type),
                 description='The Information to aid in pagination',
-            ),
-            'edges': GraphQLField(
-                GraphQLList(edgeType),
-                description='Information to aid in pagination.',
-            )
-        }, **resolveMaybeThunk(connectionFields))
+            )),
+            ('edges', GraphQLField(
+                GraphQLList(edge_type),
+                description='A list of edges.',
+            )),
+        ), **resolve_maybe_thunk(connection_fields))
     )
 
-    return GraphQLConnection(edgeType, connectionType)
+    return edge_type, connection_type
 
 
 # The common page info type used by all connections.
-
-pageInfoType = GraphQLObjectType(
+page_info_type = GraphQLObjectType(
     'PageInfo',
     description='Information about pagination in a connection.',
-    fields=lambda:{
-        'hasNextPage': GraphQLField(
+    fields=lambda: OrderedDict((
+        ('hasNextPage', GraphQLField(
             GraphQLNonNull(GraphQLBoolean),
             description='When paginating forwards, are there more items?',
-        ),
-        'hasPreviousPage': GraphQLField(
+        )),
+        ('hasPreviousPage', GraphQLField(
             GraphQLNonNull(GraphQLBoolean),
             description='When paginating backwards, are there more items?',
-        ),
-        'startCursor': GraphQLField(
+        )),
+        ('startCursor', GraphQLField(
             GraphQLString,
             description='When paginating backwards, the cursor to continue.',
-        ),
-        'endCursor': GraphQLField(
+        )),
+        ('endCursor', GraphQLField(
             GraphQLString,
             description='When paginating forwards, the cursor to continue.',
-        ),
-    }
+        )),
+    ))
 )
